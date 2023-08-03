@@ -91,9 +91,12 @@ wait()
 back()
 
 wait()
-let searchViewPointEditText2 = pickupLog(selector().text("搜索景点、目的地").className("android.widget.EditText"));
-searchViewPointEditText2.focus()
-setTextLog(searchViewPointEditText2, "北京环球度假区")
+// 搜索历史搜索中的北京环球度假区并直接点击对应坐标
+let searchViewPointEditText2 = pickupLog(selector().text("北京环球度假区").className("android.widget.TextView"));
+searchViewPointEditText2.clickBounds()
+// 等待加载
+sleep(2000)
+// setTextLog(searchViewPointEditText2, "北京环球度假区")
 
 // TODO 找出搜索框
 // TODO 填充搜索框: 陕西历史博物馆
