@@ -143,15 +143,28 @@ ocrClick(["点击", "游客信息"])
 // 等待弹窗
 wait()
 
+const infoText = `郑智辉 362501196403150017
+蔡晓军 362501196508090647
+王杨权煜 320323201011160699
+王刚 320323198301010774
+杨茗喧 320381201103309212`
+const infos = parseTextToInfoList(infoText)
 // 填充信息
-const info = {name: "郑智辉", licenseID: "362501196403150017", phoneNumber: generateRandomPhoneNumber()}
-inputInfoAndSave(info);
+inputInfoAndSave(infos[0]);
 wait()
-const info2 = {name: "郑智辉", licenseID: "362501196403150017", phoneNumber: generateRandomPhoneNumber()}
+infos.splice(0, 1)
+
 ocrClick(["更换"])
 wait()
+for (let i = 0; i < infos.length; i++) {
+    ocrClick(["新增", "游客"])
+    wait()
+    inputInfoAndSave(infos[i])
+    wait()
+}
 
-
+ocrClick(["完成"])
+wait()
 
 // 找到搜索按钮前不断回退到主页
 function back2WechatHome() {
@@ -285,4 +298,26 @@ function generateRandomPhoneNumber() {
     }
     // Concatenate the prefix and random digits to get the full phone number
     return prefix + randomNumber;
+}
+
+/**
+ * 将输入的客户文本信息转换成 json 列表
+ * @param text 文本信息
+ * @return {*[]} 列表
+ */
+function parseTextToInfoList(text) {
+    const regex = /(.+?)\s+(\d{18}|\d{17}[xX]|\d{15})/g;
+    const infoList = [];
+
+    let match;
+    while ((match = regex.exec(text))) {
+        const name = match[1];
+        const licenseID = match[2];
+        const phoneNumber = generateRandomPhoneNumber(); // 生成随机手机号，这里需要你自行实现
+
+        const info = {name, licenseID, phoneNumber};
+        infoList.push(info);
+    }
+
+    return infoList;
 }
