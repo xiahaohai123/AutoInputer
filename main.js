@@ -1,6 +1,8 @@
 console.log("checking Accessibility");
 // 注册AccessibilityService 等待授权开启辅助功能
 auto.waitFor();
+/* 申请屏幕截图权限. */
+images.requestScreenCapture();
 // 检查无障碍服务
 var service = auto.service;
 if (!service) {
@@ -26,8 +28,11 @@ console.log("now package 2 is: ", currentPackage())
 // 找到搜索按钮前不断回退到主页，直到搜索按钮可用
 back2WechatHome();
 
-const searchButtonSelector = selector().clickable(true).longClickable(true).desc("搜索").className("android.widget.RelativeLayout");
-let searchButton = searchButtonSelector.findOnce();
+function getSearchButtonInWechat() {
+    return pickupLog(selector().clickable(true).longClickable(true).desc("搜索").className("android.widget.RelativeLayout"));
+}
+
+let searchButton = getSearchButtonInWechat();
 console.log("found search button: ", searchButton)
 console.log("click search button")
 searchButton.click()
@@ -64,15 +69,13 @@ findClickable2Click(appointmentEntryButton)
 // 等待加载博物馆预约界面
 sleep(2000)
 
-let meituanTicketsHomeButton = pickup(selector().desc("返回").className("android.widget.Button"));
-console.log("found control: ", meituanTicketsHomeButton)
+let meituanTicketsHomeButton = pickupLog(selector().desc("返回").className("android.widget.Button"));
 findClickable2Click(meituanTicketsHomeButton)
 
 // 等待进入美团门票主页
 sleep(2000)
 
 let maskButton = pickupLog(selector().clickable(true).className("android.widget.Button"));
-console.log("found objects: ", maskButton)
 maskButton.click()
 // 进入遮罩层宣传页
 wait()
@@ -92,11 +95,41 @@ back()
 
 wait()
 // 搜索历史搜索中的北京环球度假区并直接点击对应坐标
-let searchViewPointEditText2 = pickupLog(selector().text("北京环球度假区").className("android.widget.TextView"));
+let project = "北京环球度假区";
+let searchViewPointEditText2 = pickupLog(selector().text(project).className("android.widget.TextView"));
 searchViewPointEditText2.clickBounds()
 // 等待加载
 sleep(2000)
+
+let beijingTextView = selector().text(project).className("android.widget.TextView").find()[1];
+beijingTextView.parent().parent().clickBounds(10, 15)
 // setTextLog(searchViewPointEditText2, "北京环球度假区")
+// 等待加载
+sleep(2000)
+
+// 上滑拉出预订按钮
+swipe(200, 800, 200, 0, 500)
+
+// 找出预订按钮
+let bookButton = pickupLog(selector().text("预订").className("android.widget.Button"));
+findClickable2Click(bookButton)
+
+sleep(5000)
+
+// 找出新增按钮
+ocrClick(["点击", "游客信息"])
+// 等待弹窗
+wait()
+
+// 填充信息
+const info = {name: "哈哈哈", licenseID: "330301154451320145", phoneNumber: "13541254874"}
+ocrPaste(info.name, ["必填", "姓名"])
+wait()
+ocrPaste(info.licenseID, ["必填", "证件号"])
+wait()
+ocrPaste(info.phoneNumber, ["必填", "手机号"])
+
+ocrClick(["保存"])
 
 // TODO 找出搜索框
 // TODO 填充搜索框: 陕西历史博物馆
@@ -112,7 +145,10 @@ function back2WechatHome() {
     while (true) {
         let backButton = pickupLog(selector().desc("返回").className("android.widget.ImageView"));
         let cancelButton = pickupLog(selector().desc("取消按钮").text("取消").className("android.widget.TextView"));
-        if (backButton != null) {
+        let searchButton = getSearchButtonInWechat();
+        if (searchButton != null) {
+            break;
+        } else if (backButton != null) {
             findClickable2Click(backButton)
         } else if (cancelButton != null) {
             findClickable2Click(cancelButton)
@@ -154,4 +190,52 @@ function pickupLog(selector) {
     let uiObject = pickup(selector);
     console.log("found uiObject: ", uiObject)
     return uiObject
+}
+
+function ocrPaste(text, locationIncludes) {
+    // 写剪切板
+    setClip(text)
+    // 粘贴信息
+    let bound2Click = ocrFirstBounds(locationIncludes);
+    click(bound2Click.centerX(), bound2Click.centerY())
+    sleep(500)
+    longClick(bound2Click.centerX(), bound2Click.centerY())
+    sleep(500)
+    let pasteButtonBounds = getFilteredOcrResult(["粘贴"])[0].bounds;
+    click(pasteButtonBounds.left + 10, pasteButtonBounds.centerY())
+}
+
+function ocrClick(includes) {
+    let bound2Click = ocrFirstBounds(includes);
+    click(bound2Click.centerX(), bound2Click.centerY())
+}
+
+
+function ocrLongClick(includes) {
+    let bound2Click = ocrFirstBounds(includes);
+    longClick(bound2Click.centerX(), bound2Click.centerY())
+}
+
+function ocrFirstBounds(includes) {
+    let filteredResults = getFilteredOcrResult(includes);
+    return filteredResults[0].bounds;
+}
+
+function getFilteredOcrResult(includes) {
+    let ocrDetectResult = ocrDetectScreen();
+    // 对 ocr 检测结果进行过滤，要求结果中的 label 属性同时满足所有输入的不定长参数表
+    let filteredResults = ocrDetectResult.filter((result) => {
+        return includes.every((include) => result.label.includes(include));
+    });
+    console.log("filtered ocr detected result: ", filteredResults)
+    return filteredResults;
+}
+
+function ocrDetectScreen() {
+    /* 截屏并获取包装图像对象. */
+    let img = images.captureScreen();
+    /* OCR 识别并获取结果, 结果为字符串数组. */
+    let results = ocr.detect(img);
+    console.log("ocr detect results: ", results)
+    return results
 }
