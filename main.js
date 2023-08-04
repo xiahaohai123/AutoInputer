@@ -116,6 +116,23 @@ findClickable2Click(bookButton)
 
 sleep(5000)
 
+// TODO 移除所有客人
+let haveGuest = getFilteredOcrResult(["更换"]).length != 0;
+
+if (haveGuest) {
+    ocrClick(["更换"])
+    wait()
+    ocrClick(["编辑"])
+    wait()
+    ocrClick(["除", "游客"])
+    wait()
+    ocrClick(["确定"], 1)
+    wait()
+    ocrClick(["完成"])
+    wait()
+}
+
+// TODO 填写客人信息
 // 找出新增按钮
 ocrClick(["点击", "游客信息"])
 // 等待弹窗
@@ -130,14 +147,6 @@ ocrClick(["更换"])
 wait()
 
 
-// TODO 找出搜索框
-// TODO 填充搜索框: 陕西历史博物馆
-// TODO 搜索
-// TODO 点击预约
-// TODO 进入美团门票小程序
-// TODO 点击预定
-// TODO 移除所有客人
-// TODO 填写客人信息
 
 // 找到搜索按钮前不断回退到主页
 function back2WechatHome() {
@@ -214,8 +223,16 @@ function ocrPaste(text, locationIncludes) {
     click(pasteButtonBounds.left + 10, pasteButtonBounds.centerY())
 }
 
-function ocrClick(includes) {
-    let bound2Click = ocrFirstBounds(includes);
+function ocrClick(includes, number) {
+    console.log("ocr click to click: ", includes)
+    let filteredResults = getFilteredOcrResult(includes);
+    let targetResult
+    if (number != null) {
+        targetResult = filteredResults[number]
+    } else {
+        targetResult = filteredResults[0]
+    }
+    let bound2Click = targetResult.bounds;
     click(bound2Click.centerX(), bound2Click.centerY())
 }
 
