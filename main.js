@@ -117,12 +117,12 @@ findClickable2Click(bookButton)
 sleep(5000)
 
 // 如果存在更换按钮，则先移除所有客人
-let haveGuest = ocrExist(["更换"]);
+let haveGuest = ocrExist(["更", "换|換"]);
 
 // 移除所有客人
 if (haveGuest) {
     // 打开新增更换列表
-    ocrClick(["更换"])
+    ocrClick(["更", "换|換"])
     wait()
     // 删除所有游客
     while(ocrExist(["编辑"])){
@@ -149,15 +149,17 @@ const infoText = `郑智辉 362501196403150017
 王刚 320323198301010774
 杨茗喧 320381201103309212`
 const infos = parseTextToInfoList(infoText)
+console.log("got infos: ", infos)
+
 // 填充信息
 inputInfoAndSave(infos[0]);
 wait()
 infos.splice(0, 1)
 
-ocrClick(["更换"])
+ocrClick(["更", "换|換"])
 wait()
 for (let i = 0; i < infos.length; i++) {
-    ocrClick(["新增", "游客"])
+    ocrClick(["新|折", "增|増", "游客"])
     wait()
     inputInfoAndSave(infos[i])
     wait()
@@ -187,6 +189,7 @@ function back2WechatHome() {
 
 // 输入用户信息并保存
 function inputInfoAndSave(info) {
+    console.log("input info: ", info)
     ocrPaste(info.name, ["必", "姓名"])
     wait()
     ocrPaste(info.licenseID, ["必", "证件号"])
@@ -241,8 +244,10 @@ function ocrPaste(text, locationIncludes) {
     click(pasteButtonBounds.left + 10, pasteButtonBounds.centerY())
 }
 
-function ocrExist(includes){
-    return getFilteredOcrResult(includes).length != 0;
+function ocrExist(includes) {
+    let exist = getFilteredOcrResult(includes).length != 0;
+    console.log("ocr exist: ", includes, exist)
+    return exist;
 }
 
 function ocrClick(includes, number) {
@@ -269,12 +274,11 @@ function ocrFirstBounds(includes) {
     return filteredResults[0].bounds;
 }
 
+
 function getFilteredOcrResult(includes) {
     let ocrDetectResult = ocrDetectScreen();
     // 对 ocr 检测结果进行过滤，要求结果中的 label 属性同时满足所有输入的不定长参数表
-    let filteredResults = ocrDetectResult.filter((result) => {
-        return includes.every((include) => result.label.includes(include));
-    });
+    let filteredResults = filterOcrResults(ocrDetectResult, includes);
     console.log("filtered ocr detected result: ", filteredResults)
     return filteredResults;
 }
@@ -286,6 +290,16 @@ function ocrDetectScreen() {
     let results = ocr.detect(img);
     console.log("ocr detect results: ", results)
     return results
+}
+
+function filterOcrResults(ocrDetectResult, includes) {
+    // 正则表达式过滤，以满足错别字容错
+    // const escapedFilters = includes.map((filter) => escapeRegExp(filter));
+    const regexFilters = includes.map((filter) => new RegExp(filter));
+    console.log("use regex: ", regexFilters)
+    return ocrDetectResult.filter((result) => {
+        return regexFilters.every((regex) => regex.test(result.label));
+    });
 }
 
 function generateRandomPhoneNumber() {
@@ -311,11 +325,12 @@ function parseTextToInfoList(text) {
 
     let match;
     while ((match = regex.exec(text))) {
-        const name = match[1];
-        const licenseID = match[2];
-        const phoneNumber = generateRandomPhoneNumber(); // 生成随机手机号，这里需要你自行实现
+        console.log("got match:", match)
+        let name = match[1];
+        let licenseID = match[2];
+        let phoneNumber = generateRandomPhoneNumber();
 
-        const info = {name, licenseID, phoneNumber};
+        let info = {name, licenseID, phoneNumber};
         infoList.push(info);
     }
 
