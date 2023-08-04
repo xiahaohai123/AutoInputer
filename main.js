@@ -122,14 +122,13 @@ ocrClick(["点击", "游客信息"])
 wait()
 
 // 填充信息
-const info = {name: "哈哈哈", licenseID: "330301154451320145", phoneNumber: "13541254874"}
-ocrPaste(info.name, ["必填", "姓名"])
+const info = {name: "郑智辉", licenseID: "362501196403150017", phoneNumber: generateRandomPhoneNumber()}
+inputInfoAndSave(info);
 wait()
-ocrPaste(info.licenseID, ["必填", "证件号"])
+const info2 = {name: "郑智辉", licenseID: "362501196403150017", phoneNumber: generateRandomPhoneNumber()}
+ocrClick(["更换"])
 wait()
-ocrPaste(info.phoneNumber, ["必填", "手机号"])
 
-ocrClick(["保存"])
 
 // TODO 找出搜索框
 // TODO 填充搜索框: 陕西历史博物馆
@@ -157,6 +156,16 @@ function back2WechatHome() {
         }
         wait()
     }
+}
+
+// 输入用户信息并保存
+function inputInfoAndSave(info) {
+    ocrPaste(info.name, ["必", "姓名"])
+    wait()
+    ocrPaste(info.licenseID, ["必", "证件号"])
+    wait()
+    ocrPaste(info.phoneNumber, ["必", "手机号"])
+    ocrClick(["保存"])
 }
 
 
@@ -238,4 +247,16 @@ function ocrDetectScreen() {
     let results = ocr.detect(img);
     console.log("ocr detect results: ", results)
     return results
+}
+
+function generateRandomPhoneNumber() {
+    const prefix = "134";
+    const digitsNeeded = 11 - prefix.length;
+    let randomNumber = "";
+    // Generate random digits for the rest of the phone number
+    for (let i = 0; i < digitsNeeded; i++) {
+        randomNumber += Math.floor(Math.random() * 10);
+    }
+    // Concatenate the prefix and random digits to get the full phone number
+    return prefix + randomNumber;
 }
