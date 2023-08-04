@@ -116,18 +116,23 @@ findClickable2Click(bookButton)
 
 sleep(5000)
 
-// TODO 移除所有客人
-let haveGuest = getFilteredOcrResult(["更换"]).length != 0;
+// 如果存在更换按钮，则先移除所有客人
+let haveGuest = ocrExist(["更换"]);
 
+// 移除所有客人
 if (haveGuest) {
+    // 打开新增更换列表
     ocrClick(["更换"])
     wait()
-    ocrClick(["编辑"])
-    wait()
-    ocrClick(["除", "游客"])
-    wait()
-    ocrClick(["确定"], 1)
-    wait()
+    // 删除所有游客
+    while(ocrExist(["编辑"])){
+        ocrClick(["编辑"])
+        wait()
+        ocrClick(["除", "游客"])
+        wait()
+        ocrClick(["确定"], 1)
+        wait()
+    }
     ocrClick(["完成"])
     wait()
 }
@@ -221,6 +226,10 @@ function ocrPaste(text, locationIncludes) {
     sleep(500)
     let pasteButtonBounds = getFilteredOcrResult(["粘贴"])[0].bounds;
     click(pasteButtonBounds.left + 10, pasteButtonBounds.centerY())
+}
+
+function ocrExist(includes){
+    return getFilteredOcrResult(includes).length != 0;
 }
 
 function ocrClick(includes, number) {
