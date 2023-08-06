@@ -1,172 +1,220 @@
-console.log("checking Accessibility");
-// 注册AccessibilityService 等待授权开启辅助功能
-auto.waitFor();
-/* 申请屏幕截图权限. */
-images.requestScreenCapture();
-// 检查无障碍服务
-var service = auto.service;
-if (!service) {
-    toast("请先开启辅助功能");
-    exit();
-}
-console.log("got auto service: ", service);
-console.log("start to open wechat");
+"ui";
 
-// app.launchPackage("com.tencent.mm")
-app.startActivity({
-    packageName: "com.tencent.mm",
-    className: "com.tencent.mm.ui.LauncherUI"
+ui.layout(
+  <vertical>
+      <text text={"美团门票游客自动代填器"} textSize={"18sp"} textColor={"black"} gravity={"center"}/>
+      <input id="customInfo" hint="请输入游客信息" textColor={"black"}/>
+      <button id="paste" text="粘贴"/>
+      <button id="autoInput" text="自动代填"/>
+      <button id="logLauncher" text="打开日志"/>
+  </vertical>
+)
+ui.autoInput.click(function () {
+    console.log("custom info control: ", ui.customInfo)
+    let customInfo = ui.customInfo.getText();
+    console.log("got custom info: ", customInfo)
+    let infos = parseTextToInfoList(customInfo);
+    threads.start(function () {
+        autoFillProxy(infos)
+    })
 })
 
-console.log("now package 1 is: ", currentPackage())
+ui.paste.click(function () {
+    let clipText = getClip();
+    if (clipText == null || clipText.length <= 0) {
+        return
+    }
+    ui.customInfo.setText(clipText)
+})
 
-waitForPackage("com.tencent.mm")
+ui.logLauncher.click(function () {
+    console.launch()
+})
 
-console.log("now package 2 is: ", currentPackage())
+
+function autoFillProxy(infos) {
+    if (infos == null || infos.length <= 0) {
+        toastLog("没有输入代填信息")
+        return
+    }
+    try {
+        autoFill(infos)
+    } catch (err) {
+        toast("caught err" + err)
+        console.warn("caught err: ", err)
+    } finally {
+        threads.currentThread().interrupt()
+    }
+}
+
+/**
+ * 启动代填程序
+ * @param infos 客户信息
+ */
+function autoFill(infos) {
+    console.log("got infos: ", infos)
+
+    console.log("checking Accessibility");
+// 注册AccessibilityService 等待授权开启辅助功能
+    auto.waitFor();
+    /* 申请屏幕截图权限. */
+    images.requestScreenCapture();
+// 检查无障碍服务
+    var service = auto.service;
+    if (!service) {
+        toast("请先开启辅助功能");
+        exit();
+    }
+    console.log("got auto service: ", service);
+    console.log("start to open wechat");
+
+// app.launchPackage("com.tencent.mm")
+    app.startActivity({
+        packageName: "com.tencent.mm",
+        className: "com.tencent.mm.ui.LauncherUI"
+    })
+
+    console.log("now package 1 is: ", currentPackage())
+
+    waitForPackage("com.tencent.mm")
+
+    console.log("now package 2 is: ", currentPackage())
 
 
 // 找到搜索按钮前不断回退到主页，直到搜索按钮可用
-back2WechatHome();
+    back2WechatHome();
 
-function getSearchButtonInWechat() {
-    return pickupLog(selector().clickable(true).longClickable(true).desc("搜索").className("android.widget.RelativeLayout"));
-}
 
-let searchButton = getSearchButtonInWechat();
-console.log("found search button: ", searchButton)
-console.log("click search button")
-searchButton.click()
+    let searchButton = getSearchButtonInWechat();
+    console.log("found search button: ", searchButton)
+    console.log("click search button")
+    searchButton.click()
 
 // 解除输入法
-wait()
-back()
+    wait()
+    back()
 
-console.log("current package", currentPackage())
+    console.log("current package", currentPackage())
 
 // const searchEditTextSelector = selector().text("搜索").className("android.widget.EditText").clickable(true).longClickable(true)
-let searchEditTextSelector = selector().id('cd7')
-const searchEditText = searchEditTextSelector.findOnce()
-console.log("found control: ", searchEditText)
-let searchText = "陕西历史博物馆";
-setTextLog(searchEditText, searchText)
+    let searchEditTextSelector = selector().id('cd7')
+    const searchEditText = searchEditTextSelector.findOnce()
+    console.log("found control: ", searchEditText)
+    let searchText = "陕西历史博物馆";
+    setTextLog(searchEditText, searchText)
 // 等待自动搜索
-sleep(2000)
+    sleep(2000)
 
-let resultNetLayout = selector().text("搜索网络结果").findOnce().parent().parent();
-console.log("found control: ", resultNetLayout)
+    let resultNetLayout = selector().text("搜索网络结果").findOnce().parent().parent();
+    console.log("found control: ", resultNetLayout)
 
-let search2Click = pickup(resultNetLayout, selector().text(searchText).className("android.widget.TextView"));
+    let search2Click = pickup(resultNetLayout, selector().text(searchText).className("android.widget.TextView"));
 
-findClickable2Click(search2Click)
+    findClickable2Click(search2Click)
 
 // 等待加载搜索结果页面
-sleep(3000)
+    sleep(3000)
 
-let appointmentEntryButton = pickup(selector().textStartsWith("门票预约").className("android.widget.Button"));
-console.log("found control: ", appointmentEntryButton)
-findClickable2Click(appointmentEntryButton)
+    let appointmentEntryButton = pickup(selector().textStartsWith("门票预约").className("android.widget.Button"));
+    console.log("found control: ", appointmentEntryButton)
+    findClickable2Click(appointmentEntryButton)
 
 // 等待加载博物馆预约界面
-sleep(2000)
+    sleep(2000)
 
-let meituanTicketsHomeButton = pickupLog(selector().desc("返回").className("android.widget.Button"));
-findClickable2Click(meituanTicketsHomeButton)
+    let meituanTicketsHomeButton = pickupLog(selector().desc("返回").className("android.widget.Button"));
+    findClickable2Click(meituanTicketsHomeButton)
 
 // 等待进入美团门票主页
-sleep(2000)
+    sleep(2000)
 
-let maskButton = pickupLog(selector().clickable(true).className("android.widget.Button"));
-maskButton.click()
+    let maskButton = pickupLog(selector().clickable(true).className("android.widget.Button"));
+    maskButton.click()
 // 进入遮罩层宣传页
-wait()
+    wait()
 // 退出到主页以解除遮罩
-back()
+    back()
 // 等待遮罩层消失
-wait()
+    wait()
 
 // 点击搜索框
-let searchViewPointEditText = pickupLog(selector().text("景点/目的地").className("android.widget.EditText"));
-findClickable2ClickBounds(searchViewPointEditText)
+    let searchViewPointEditText = pickupLog(selector().text("景点/目的地").className("android.widget.EditText"));
+    findClickable2ClickBounds(searchViewPointEditText)
 
 // 等待跳转
-wait()
+    wait()
 // 解除输入法
-back()
+    back()
 
-wait()
+    wait()
 // 搜索历史搜索中的北京环球度假区并直接点击对应坐标
-let project = "北京环球度假区";
-let searchViewPointEditText2 = pickupLog(selector().text(project).className("android.widget.TextView"));
-searchViewPointEditText2.clickBounds()
+    let project = "北京环球度假区";
+    let searchViewPointEditText2 = pickupLog(selector().text(project).className("android.widget.TextView"));
+    searchViewPointEditText2.clickBounds()
 // 等待加载
-sleep(2000)
+    sleep(2000)
 
-let beijingTextView = selector().text(project).className("android.widget.TextView").find()[1];
-beijingTextView.parent().parent().clickBounds(10, 15)
+    let beijingTextView = selector().text(project).className("android.widget.TextView").find()[1];
+    beijingTextView.parent().parent().clickBounds(10, 15)
 // setTextLog(searchViewPointEditText2, "北京环球度假区")
 // 等待加载
-sleep(2000)
+    sleep(2000)
 
 // 上滑拉出预订按钮
-swipe(200, 800, 200, 0, 500)
+    swipe(200, 800, 200, 0, 500)
 
 // 找出预订按钮
-let bookButton = pickupLog(selector().text("预订").className("android.widget.Button"));
-findClickable2Click(bookButton)
+    let bookButton = pickupLog(selector().text("预订").className("android.widget.Button"));
+    findClickable2Click(bookButton)
 
-sleep(5000)
+    sleep(5000)
 
 // 如果存在更换按钮，则先移除所有客人
-let haveGuest = ocrExist(["更", "换|換"]);
+    let haveGuest = ocrExist(["已选", "满|満"]);
 
 // 移除所有客人
-if (haveGuest) {
-    // 打开新增更换列表
-    ocrClick(["更", "换|換"])
-    wait()
-    // 删除所有游客
-    while(ocrExist(["编辑"])){
-        ocrClick(["编辑"])
+    if (haveGuest) {
+        // 打开新增更换列表
+        ocrClick(["新|折", "增|増"])
         wait()
-        ocrClick(["除", "游客"])
-        wait()
-        ocrClick(["确定"], 1)
+        // 删除所有游客
+        while (ocrExist(["编辑"])) {
+            ocrClick(["编辑"])
+            wait()
+            ocrClick(["除", "游客"])
+            wait()
+            ocrClick(["确定"], 1)
+            wait()
+        }
+        ocrClick(["完成"])
         wait()
     }
-    ocrClick(["完成"])
-    wait()
-}
 
 // TODO 填写客人信息
 // 找出新增按钮
-ocrClick(["点击", "游客信息"])
+    ocrClick(["点击", "游客信息"])
 // 等待弹窗
-wait()
-
-const infoText = `郑智辉 362501196403150017
-蔡晓军 362501196508090647
-王杨权煜 320323201011160699
-王刚 320323198301010774
-杨茗喧 320381201103309212`
-const infos = parseTextToInfoList(infoText)
-console.log("got infos: ", infos)
+    wait()
 
 // 填充信息
-inputInfoAndSave(infos[0]);
-wait()
-infos.splice(0, 1)
+    inputInfoAndSave(infos[0]);
+    wait()
+    infos.splice(0, 1)
 
-ocrClick(["更", "换|換"])
-wait()
-for (let i = 0; i < infos.length; i++) {
-    ocrClick(["新|折", "增|増", "游客"])
+    ocrClick(["更", "换|換"])
     wait()
-    inputInfoAndSave(infos[i])
+    for (let i = 0; i < infos.length; i++) {
+        ocrClick(["新|折", "增|増", "游客"])
+        wait()
+        inputInfoAndSave(infos[i])
+        wait()
+    }
+
+    ocrClick(["完成"])
     wait()
+    return getSearchButtonInWechat;
 }
 
-ocrClick(["完成"])
-wait()
 
 // 找到搜索按钮前不断回退到主页
 function back2WechatHome() {
@@ -185,6 +233,10 @@ function back2WechatHome() {
         }
         wait()
     }
+}
+
+function getSearchButtonInWechat() {
+    return pickupLog(selector().clickable(true).longClickable(true).desc("搜索").className("android.widget.RelativeLayout"));
 }
 
 // 输入用户信息并保存
@@ -245,7 +297,7 @@ function ocrPaste(text, locationIncludes) {
 }
 
 function ocrExist(includes) {
-    let exist = getFilteredOcrResult(includes).length != 0;
+    let exist = getFilteredOcrResult(includes).length !== 0;
     console.log("ocr exist: ", includes, exist)
     return exist;
 }
