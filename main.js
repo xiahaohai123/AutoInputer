@@ -66,6 +66,9 @@ function autoFill(infos) {
         exit();
     }
     console.log("got auto service: ", service);
+
+    toastLog("开始代填")
+
     console.log("start to open wechat");
 
 // app.launchPackage("com.tencent.mm")
@@ -212,7 +215,8 @@ function autoFill(infos) {
 
     ocrClick(["完成"])
     wait()
-    return getSearchButtonInWechat;
+
+    toastLog("代填结束")
 }
 
 
