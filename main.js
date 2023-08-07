@@ -170,7 +170,7 @@ function autoFill(infos) {
     sleep(5000)
 
 // 如果存在更换按钮，则先移除所有客人
-    let haveGuest = ocrExist(["已选", "满|満"]);
+    let haveGuest = ocrExist(["已选", "满|満|溝"]);
 
 // 移除所有客人
     if (haveGuest) {
@@ -201,7 +201,7 @@ function autoFill(infos) {
     wait()
     infos.splice(0, 1)
 
-    ocrClick(["更", "换|換"])
+    ocrClick(["新|折", "增|増"])
     wait()
     for (let i = 0; i < infos.length; i++) {
         ocrClick(["新|折", "增|増", "游客"])
