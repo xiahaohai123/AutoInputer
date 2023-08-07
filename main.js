@@ -13,7 +13,7 @@ ui.autoInput.click(function () {
     console.log("custom info control: ", ui.customInfo)
     let customInfo = ui.customInfo.getText();
     console.log("got custom info: ", customInfo)
-    let infos = parseTextToInfoList(customInfo);
+    let infos = parseTextToInfoList(customInfo.toString());
     threads.start(function () {
         autoFillProxy(infos)
     })
@@ -37,6 +37,7 @@ function autoFillProxy(infos) {
         toastLog("没有输入代填信息")
         return
     }
+    console.log("got infos: ", infos)
     try {
         autoFill(infos)
     } catch (err) {
@@ -52,8 +53,6 @@ function autoFillProxy(infos) {
  * @param infos 客户信息
  */
 function autoFill(infos) {
-    console.log("got infos: ", infos)
-
     console.log("checking Accessibility");
 // 注册AccessibilityService 等待授权开启辅助功能
     auto.waitFor();
@@ -376,6 +375,7 @@ function generateRandomPhoneNumber() {
  * @return {*[]} 列表
  */
 function parseTextToInfoList(text) {
+    text = convertToInputFormat1(text);
     const regex = /(.+?)\s+(\d{18}|\d{17}[xX]|\d{15})/g;
     const infoList = [];
 
@@ -391,4 +391,25 @@ function parseTextToInfoList(text) {
     }
 
     return infoList;
+}
+
+// 针对数字在前名字在后的文本，格式化为名字在前数字在后
+function convertToInputFormat1(input) {
+    const lines = input.split(/[\r\n]+/).filter(Boolean);
+    const isFormat2 = /^\d+/.test(lines[0]);
+    if (!isFormat2) {
+        return input
+    }
+    let convertedInput = "";
+
+    for (let line of lines) {
+        const match = line.match(/(\d+)\s+([\u4e00-\u9fa5]+)/);
+        if (match) {
+            const id = match[1];
+            const name = match[2];
+            convertedInput += `${name} ${id}\n`;
+        }
+    }
+
+    return convertedInput;
 }
